@@ -52,9 +52,9 @@
 
 % Edit below as instructed
 
-\title{SnappyLanguageName Language Specification} % Replace SnappyLanguageName with your project's name
+\title{CAT Language Specification} % Replace SnappyLanguageName with your project's name
 
-\author{Partner One \and Parnter Two} % Replace these with real partner names.
+\author{Michael Faulkner} % Replace these with real partner names.
 
 \begin{document}
   
@@ -62,11 +62,32 @@
 
 \subsection*{Introduction}
 
-\todo[inline]{Delete this TODO and replace with 2+ paragraphs.}
+CAT (Calculus and Algebra Tutor) is a domain-specific language designed to assist 
+individuals with mathematical calculations. More specifically, the language allows 
+users to input mathematical expressions and operations to perform on the expressions. 
+Running a program in this language will then produce a textual represenation of the 
+ensuing calculation as well as an optional \LaTeX{} file and PDF that displays the calculation
+in a pretty manner.
+
+\bigskip
+While there exist computational tools for generalized mathematical expressions 
+(for example Mathematica), such tools tend to focus only on getting to an answer. 
+The purpose of CAT is to assist its users in understanding \textit{how} to get 
+the answer by outputting the intermediate steps of the calculation. This 
+addresses another point of annoyance with tools like Mathematica that will 
+sometimes output, seemingly arbitrary, restrictions on the parameters alongside 
+its final expression. By working through the intermediate steps of the calculation, 
+CAT should allow its users to understand why such restrictions were imposed and 
+what the limits of the calculation would be if such assumptions were not made.
 
 \subsection*{Design Principles}
 
-\todo[inline]{Delete this TODO and replace with 1+ paragraphs.}
+The primary goal of CAT is to produce easily understandable calculations. 
+This goal corresponds with a prioritization of simpler techniques that are
+easier to follow over more powerful techniques that might be able to find
+more general answers but are less decipherable. This likely also means a
+tradeoff in terms of speed as it is necessary to work through the intermediate
+details of a calculation sufficiently to make them human readable.
 
 \subsection*{Examples}
 
@@ -74,7 +95,10 @@
 
 \subsection*{Language Concepts}
 
-\todo[inline]{Delete this TODO and replace with 1+ paragraphs.}
+The primitives of CAT are variables (i.e. $x, y, z$) and numbers 
+(i.e. $1, -10, 3.141592$). These primitives can be combined with mathematical
+operations such as +, -, *, /, \^{}, $\sin$, $\cos$, $\log$, sqrt, Differentiate,
+and Integrate in order to form expressions\dots
 
 \subsection*{Formal Syntax}
 
