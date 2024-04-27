@@ -52,6 +52,8 @@
 
 % Edit below as instructed
 
+\usepackage{array}
+
 \title{CAT Language Specification} % Replace SnappyLanguageName with your project's name
 
 \author{Michael Faulkner} % Replace these with real partner names.
@@ -95,14 +97,25 @@ details of a calculation sufficiently to make them human readable.
 
 \subsection*{Language Concepts}
 
-The primitives of CAT are variables (i.e. $x, y, z$) and numbers 
-(i.e. $1, -10, 3.141592$). These primitives can be combined with mathematical
+At it's core, CAT is a way of expressing and manipulating mathematical expressions. 
+Each line of a CAT program constitutes an expression that will be evaluated. Evaluating
+an expression involves reducing it to the simplist form possible by applying operators
+and performing algebraic manipulations. The primitives of CAT are variables (i.e. $x, y, z$) 
+and numbers (i.e. $1, -10, 3.141592$). These primitives can be combined with mathematical
 operations such as +, -, *, /, \^{}, $\sin$, $\cos$, $\log$, sqrt, Differentiate,
-and Integrate in order to form expressions\dots
+and Integrate in order to form expressions. Additionally, users are able to define variables
+(i.e. $a = \text{sqrt}(2)$, or $f=x+1$) that can be used in later lines.
 
 \subsection*{Formal Syntax}
 
-\todo[inline]{Delete this TODO and replace with BNF.}
+\begin{tabular}{>{\texttt\bgroup}l<{\egroup} >{\texttt\bgroup}r<{\egroup} >{\texttt\bgroup}l<{\egroup}}
+    <expr> &::=& <number> \\
+    <number> &::=& <digits> \\
+    &|& <digits>.<digits> \\
+    <digits> &::=& <d><digits> \\
+    &|& <d> \\
+    <d> &::=& 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+\end{tabular}
 
 \subsection*{Semantics}
 

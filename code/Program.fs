@@ -1,2 +1,19 @@
-﻿// For more information see https://aka.ms/fsharp-console-apps
-printfn "Hello from F#"
+﻿open Parser
+open System.IO
+
+[<EntryPoint>]
+let main args =
+    // Check for correct usage
+    if args.Length <> 1 && args.Length <> 2 && args.Length <> 3 then
+        printfn "Usage: dotnet run <program> [output filename] [-DEBUG]"
+        exit 1
+    
+    let input_file = args[0]
+    let input = File.ReadAllText input_file
+    let debug_on = false
+
+    let result = parse input debug_on
+    match result with
+    | Some ast -> printfn "%A" ast
+    | None -> printfn "Invalid Program."
+    0
