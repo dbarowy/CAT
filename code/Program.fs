@@ -15,6 +15,7 @@ let main args =
 
     let result = parse input debug_on
     match result with
-    | Some ast -> evaluate ast Map.empty |> ignore
+    | Some ast -> printfn "%A" ast
+    //| Some ast -> evaluate ast
     | None -> printfn "Invalid Program."
     0

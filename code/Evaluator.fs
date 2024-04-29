@@ -2,13 +2,13 @@ module Evaluator
 
 open AST
 
-type Environment = Map<char, Expression>
-
 let rec to_string (expression: Expression) =
     match expression with
     | Number(n) -> string n
     | Variable(x) -> string x
-    | Assignment(e1, e2) -> (to_string e1) + " = " + (to_string e2)
+    | Addition(es) -> failwith "TODO"
+    | Multiplication(es) -> failwith "TODO"
+    | Parentheses(e) -> failwith "TODO"
     | Sequence(es) -> 
         "[" +
             match es with 
@@ -19,61 +19,42 @@ let rec to_string (expression: Expression) =
 (*
  * @return A list of progressively more simplified versions of the expression
  *)
-let rec simplify (expression: Expression)(env: Environment) =
+let rec simplify (expression: Expression) =
     match expression with
     | Number(n) ->
         // Maximally simplified already
         [expression]
     | Variable(x) -> 
-        if Map.containsKey x env then
-            expression::(simplify env[x] env)
-        else
-            [expression]
-    | Assignment(_, e) -> 
-        // Simplifying Assignments will delete derivative information
-        // --> This should perform all simplifications except substitution
-        // figure out how to handle this recursively
+        // Maximally simplified
+        [expression]
+    | Addition(es) -> failwith "TODO"
+    | Multiplication(es) -> failwith "TODO"
+    | Parentheses(e) -> failwith "TODO"
     | Sequence(es) -> 
         printfn "Sequence should not be passed to simplify."
         exit 1
 
-let process_expression (expression: Expression)(env: Environment) =
+let process_expression (expression: Expression) =
     printfn "Simplifying: %s" (to_string expression)
-    let expressions = simplify expression env
+    let expressions = simplify expression
     
-    let expression', env' = 
-        match expression with
-        | Assignment(e1, _) ->
-            match e1 with
-            | Variable(x) ->
-                List.fold
-                    (fun (_: Expression, environment: Environment)(e: Expression) -> 
-                        printfn "==> %c = %s" x (to_string e)
-                        e, environment.Add (x, e))
-                    (expression, env)
-                    expressions
-            | _ -> 
-                printfn "Invalid Assignment. Left side of an assignment must be a variable."
-                exit 1
-        | _ -> 
-            List.fold
-                (fun _ e -> 
-                    printfn "==> %s" (to_string e))
-                ()
-                expressions
-            expression, env
-    expression', env'
+    List.fold
+        (fun _ e -> 
+            printfn "==> %s" (to_string e))
+        ()
+        expressions
+    ()
 
-let rec evaluate (expression: Expression)(env: Environment) =
+let rec evaluate (expression: Expression) =
     match expression with
     | Sequence(es) -> 
         match es with 
         | [e] ->
-            process_expression e env
+            process_expression e
         | e::es -> 
-            let e', env' = process_expression e env
+            process_expression e
             printfn ""
-            evaluate (Sequence es) env'
+            evaluate (Sequence es)
         | [] ->
             printfn "Invalid Sequence. There must be at least one expression."
             exit 1
