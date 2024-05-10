@@ -7,7 +7,7 @@ let rec to_string (expression: Expression) =
     | Number(n) -> string n
     | Variable(x) -> string x
     | Addition(es) -> failwith "TODO"
-    | Multiplication(es) -> failwith "TODO"
+    | Multiplication(e1, e2) -> failwith "TODO"
     | Parentheses(e) -> failwith "TODO"
     | Sequence(es) -> 
         "[" +
@@ -28,7 +28,7 @@ let rec simplify (expression: Expression) =
         // Maximally simplified
         [expression]
     | Addition(es) -> failwith "TODO"
-    | Multiplication(es) -> failwith "TODO"
+    | Multiplication(e1, e2) -> failwith "TODO"
     | Parentheses(e) -> failwith "TODO"
     | Sequence(es) -> 
         printfn "Sequence should not be passed to simplify."

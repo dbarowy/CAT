@@ -4,6 +4,7 @@ open Combinator
 open AST
 
 let expression, expressionImpl = recparser()
+let precedence, precedenceImpl = recparser1()
 
 let pad parser = pbetween pwsNoNL0 parser pwsNoNL0
 let period = pstr "." <!> "period"
@@ -26,47 +27,51 @@ let variable = plower |>> Variable <!> "variable"
 
 let literals = number <|> variable
 
-let addition, additionImpl = recparser()
-let subtraction, subtractionImpl = recparser()
-let multiplication, multiplicationImpl = recparser()
-let parentheses, parenthesesImpl = recparser()
-
-let rec precedence level =
-    match level with
-    | 0 -> addition <|> subtraction <|> precedence (level + 1)
-    | 1 -> multiplication <|> precedence (level + 1)
-    | 2 -> parentheses <|> precedence (level + 1)
-    | 3 -> literals
-    | _ -> failwith "Illegal Precedence Level."
-
-parenthesesImpl := 
+let parentheses = 
     pbetween 
         (pchar '(') 
         (precedence 3) 
         (pchar ')') 
     |>> Parentheses <!> "parentheses"
 
-multiplicationImpl := 
+let multiplication = 
     pseq 
         (precedence 2) // Higher precedence on left prevents infinite recursion
-        (pright (pad (pchar '*')) precedence2) 
+        (pright (pad (pchar '*')) (precedence 2)) 
         Multiplication
             
-additionImpl := 
+let additionOrSubtraction = 
     pseq 
-        (precedence 1) // Higher precedence on left prevents infinite recursion
-        (pmany1 (pright (pad (pchar '+')) (precedence 1)))
-        (fun (e, es) -> e::es)
-
-subtractionImpl :=
-    pseq 
-        precedence2 // Higher precedence on left prevents infinite recursion
-        (pright (pad (pchar '-')) precedence1) 
-        (fun (a, b: Expression) ->
-            Addition (a, (Multiplication ((Number -1), b))))
+        (precedence 1) 
+        (pmany1 
+            (pseq 
+                ((pad (pchar '+')) <|> (pad (pchar '-'))) 
+                (precedence 1)
+                (fun (symbol, expr) -> 
+                    match symbol with
+                    | '+' -> expr
+                    | '-' -> Multiplication (Number -1, expr)
+                    | _ -> 
+                        printfn "Illegal addition or subtraction symbol."
+                        exit 1
+                )
+            )
+        )
+        (fun (e, es) -> Addition (e::es))
 
 expressionImpl := 
-    pad precedence1 <!> "expression"
+    pad (precedence 0) <!> "expression"
+
+
+let rec precedenceRecImpl level =
+    match level with
+    | 0 -> additionOrSubtraction <|> precedence (level + 1)
+    | 1 -> multiplication <|> precedence (level + 1)
+    | 2 -> parentheses <|> precedence (level + 1)
+    | 3 -> literals
+    | _ -> failwith "Illegal Precedence Level."
+precedenceImpl := precedenceRecImpl
+
 
 let instruction_seq = 
     pseq 

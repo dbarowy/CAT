@@ -100,6 +100,11 @@ let recparser() =
   let r = ref dumbparser
   (fun (input: Input) -> !r input), r
 
+let recparser1() =
+  let dumbparser = fun x1 (input: Input) -> failwith "You forgot to initialize your recursive parser."
+  let r = ref dumbparser
+  (fun x1 (input: Input) -> !r x1 input), r
+
 // suggested refactoring in RFC FS-1111 due to ref cell deprecation
 // https://github.com/fsharp/fslang-design/blob/main/FSharp-6.0/FS-1111-refcell-op-information-messages.md
 // to be enabled CSCI 334, Spring 2024

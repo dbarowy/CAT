@@ -9,13 +9,21 @@ let main args =
         printfn "Usage: dotnet run <program> [output filename] [-DEBUG]"
         exit 1
     
+    // Reaed in the input file
     let input_file = args[0]
-    let input = File.ReadAllText input_file
+    let input = 
+        try
+            File.ReadAllText input_file
+        with
+            | _ -> 
+                printfn "Invalid filename."
+                exit 1
+
+    // Hardcoded debug flag, refactor to check input later
     let debug_on = false
 
     let result = parse input debug_on
     match result with
     | Some ast -> printfn "%A" ast
-    //| Some ast -> evaluate ast
     | None -> printfn "Invalid Program."
     0
