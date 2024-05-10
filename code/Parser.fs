@@ -12,9 +12,13 @@ let digits = pmany1 pdigit |>> stringify <!> "digits"
 let concatenate (a, b) = a + b
 let floating_point = 
     (pseq 
-        (pseq digits period concatenate) 
+        (pseq digits period concatenate <|> period) 
         digits 
         concatenate
+    <|> pseq 
+            digits
+            period
+            concatenate
     <|> digits) <!> "floating_point"
 let number = 
     (pseq 
@@ -30,16 +34,39 @@ let literals = number <|> variable
 let parentheses = 
     pbetween 
         (pchar '(') 
-        (precedence 3) 
+        (precedence 0) 
         (pchar ')') 
     |>> Parentheses <!> "parentheses"
 
-let multiplication = 
+let exponentiation = 
     pseq 
-        (precedence 2) // Higher precedence on left prevents infinite recursion
-        (pright (pad (pchar '*')) (precedence 2)) 
-        Multiplication
-            
+        (precedence 3) 
+        (pright (pad (pchar '^')) (precedence 3))
+        (fun (e1, e2) -> Exponentiation (e1, e2))
+let multiplicationOrDivision = 
+    pseq 
+        (precedence 2) 
+        (pmany1 
+            (pseq 
+                ((pad (pchar '*')) <|> (pad (pchar '/'))) 
+                (precedence 2)
+                (fun (symbol, expr) -> 
+                    match symbol with
+                    | '*' -> expr
+                    | '/' -> Exponentiation (expr, Number -1)
+                    | _ -> 
+                        printfn "Illegal multiplication or division symbol."
+                        exit 1
+                )
+            <|> pad (precedence 2)
+            ) 
+        )
+        (fun (e, es) -> Multiplication (e::es))
+    <|> pseq
+        (pad (pchar '-'))
+        (precedence 1)
+        (fun (_, expr) -> Multiplication [Number -1; expr])
+         
 let additionOrSubtraction = 
     pseq 
         (precedence 1) 
@@ -50,7 +77,7 @@ let additionOrSubtraction =
                 (fun (symbol, expr) -> 
                     match symbol with
                     | '+' -> expr
-                    | '-' -> Multiplication (Number -1, expr)
+                    | '-' -> Multiplication [Number -1; expr]
                     | _ -> 
                         printfn "Illegal addition or subtraction symbol."
                         exit 1
@@ -62,13 +89,13 @@ let additionOrSubtraction =
 expressionImpl := 
     pad (precedence 0) <!> "expression"
 
-
 let rec precedenceRecImpl level =
     match level with
     | 0 -> additionOrSubtraction <|> precedence (level + 1)
-    | 1 -> multiplication <|> precedence (level + 1)
-    | 2 -> parentheses <|> precedence (level + 1)
-    | 3 -> literals
+    | 1 -> multiplicationOrDivision <|> precedence (level + 1)
+    | 2 -> exponentiation <|> precedence (level + 1)
+    | 3 -> parentheses <|> precedence (level + 1)
+    | 4 -> literals
     | _ -> failwith "Illegal Precedence Level."
 precedenceImpl := precedenceRecImpl
 
