@@ -2,12 +2,18 @@ module Evaluator
 
 open AST
 
-let begins_with_floating_point (s: string) =
-    match s |> Seq.toList with
-    '0'::_ |'1'::_ | '2'::_ | '3'::_ | '4'::_ | '5'::_
-    | '6'::_ | '7'::_ | '8'::_ | '9'::_ | '.'::_ | '-'::_
-        -> true
+let floating_point_char = ["0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8"; "9"; "."]
+
+let rec begins_with (prefixes: string list) (s: string) =
+    match prefixes with
+    | prefix::prefixes -> s.StartsWith(prefix) || begins_with prefixes s
     | _ -> false
+
+let rec ends_with (suffixes: string list) (s: string) =
+    match suffixes with
+    | suffix::suffixes -> s.EndsWith(suffix) || ends_with suffixes s
+    | _ -> false
+
 
 let rec to_string (expression: Expression) =
     match expression with
@@ -23,11 +29,12 @@ let rec to_string (expression: Expression) =
         match es with
         | [e] -> to_string e
         | e::es -> 
+            let s = to_string e
             let tail = to_string (Multiplication es)
-            if begins_with_floating_point tail then
-                (to_string e) + " * " + tail
+            if begins_with ["-"] s || (ends_with floating_point_char s && begins_with floating_point_char tail) then
+                "(" + s + ")" + to_string (Multiplication es)
             else
-                (to_string e) + tail
+                s + to_string (Multiplication es)
         | [] -> failwith "Invalid Multiplication"
     | Exponentiation(e1, e2) -> 
         // Check if we need to wrap the exponent in parentheses
@@ -56,6 +63,7 @@ let rec simplify (expression: Expression) =
         [expression]
     | Addition(es) -> failwith "TODO"
     | Multiplication(es) -> failwith "TODO"
+    | Exponentiation(expbase, exponent) -> failwith "TODO"
     | Parentheses(e) -> failwith "TODO"
     | Sequence(es) -> failwith "Sequence should not be passed to simplify."
 

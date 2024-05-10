@@ -20,12 +20,13 @@ let floating_point =
             period
             concatenate
     <|> digits) <!> "floating_point"
-let number = 
-    (pseq 
-        (pstr "-")
-        floating_point
-        concatenate
-    <|> floating_point) |>> (fun x -> Number (double x)) <!> "number"
+// let number = 
+//     (pseq 
+//         (pstr "-")
+//         floating_point
+//         concatenate
+//     <|> floating_point) |>> (fun x -> Number (double x)) <!> "number"
+let number = floating_point |>> (fun x -> Number (double x)) <!> "number"
 
 let variable = plower |>> Variable <!> "variable"
 
@@ -43,6 +44,7 @@ let exponentiation =
         (precedence 3) 
         (pright (pad (pchar '^')) (precedence 3))
         (fun (e1, e2) -> Exponentiation (e1, e2))
+    <!> "Exponentiation"
 let multiplicationOrDivision = 
     pseq 
         (precedence 2) 
@@ -66,6 +68,7 @@ let multiplicationOrDivision =
         (pad (pchar '-'))
         (precedence 1)
         (fun (_, expr) -> Multiplication [Number -1; expr])
+    <!> "multiplicationOrDivision"
          
 let additionOrSubtraction = 
     pseq 
@@ -85,17 +88,18 @@ let additionOrSubtraction =
             )
         )
         (fun (e, es) -> Addition (e::es))
+    <!> "additionOrSubtraction"
 
 expressionImpl := 
     pad (precedence 0) <!> "expression"
 
 let rec precedenceRecImpl level =
     match level with
-    | 0 -> additionOrSubtraction <|> precedence (level + 1)
-    | 1 -> multiplicationOrDivision <|> precedence (level + 1)
-    | 2 -> exponentiation <|> precedence (level + 1)
-    | 3 -> parentheses <|> precedence (level + 1)
-    | 4 -> literals
+    | 0 -> additionOrSubtraction <|> precedence (level + 1) <!> "precedence 0"
+    | 1 -> multiplicationOrDivision <|> precedence (level + 1) <!> "precedence 1"
+    | 2 -> exponentiation <|> precedence (level + 1) <!> "precedence 2"
+    | 3 -> parentheses <|> precedence (level + 1) <!> "precedence 3"
+    | 4 -> literals <!> "precedence 4"
     | _ -> failwith "Illegal Precedence Level."
 precedenceImpl := precedenceRecImpl
 
