@@ -56,7 +56,7 @@
 
 \title{CAT Language Specification} % Replace SnappyLanguageName with your project's name
 
-\author{Michael Faulkner} % Replace these with real partner names.
+\author{Michael Faulkner}
 
 \begin{document}
   
@@ -93,7 +93,29 @@ details of a calculation sufficiently to make them human readable.
 
 \subsection*{Examples}
 
-\todo[inline]{Delete this TODO and replace with 3+ examples and accompanying descriptions.}
+\begin{enumerate}
+    \item The following example illustrates how each line of a CAT program is
+    treated separately so long as there are no assignments. The first line would
+    simplify to $1$, and the second line would simplify to $2x$. \\
+    \texttt{(x+1)(x-1) - x\^{}2 \\ Differentiate x\^{}2 + y\^{}2 wrt x}
+
+    \item The following example illustrates a function definition and how it
+    might be used on later lines. Note that the particular variables used in
+    the function definition have no affect on what variables it is passed later.
+    This example should expand the term inside the integral to $x + y + x + x 
+    = 3x + y$. Then, after performing the integration should find 
+    $\left. \frac{3}{2}x^2+xy \right|_0^1 = \frac{3}{2} + y$ \\
+    \texttt{z(x,y) = x + y \\ Integrate from 0 to 1 z(x,y) + z(x,x) wrt x}
+
+    \item This last example highlights some synonyms for particular language
+    constructs and additionally showcases how undefined variables will be treated
+    as any symbolic variable in a mathematical expression would be. Evaluating the
+    first integral requires splitting the integral across the discontinuity in the 
+    function. And evaluating the derivative in the second line requires symbolically
+    representing the derivative of y with respect to x. \\
+    \texttt{Int (x\^{}2-x-6)/(x-3) from a to b wrt x \\ 
+    Differentiate (x\^{}2+2xy-y\^{}2)/(z-3) with respect to x, where y(x)}
+\end{enumerate}
 
 \subsection*{Language Concepts}
 
@@ -104,22 +126,69 @@ and performing algebraic manipulations. The primitives of CAT are variables (i.e
 and numbers (i.e. $1, -10, 3.141592$). These primitives can be combined with mathematical
 operations such as +, -, *, /, \^{}, $\sin$, $\cos$, $\log$, sqrt, Differentiate,
 and Integrate in order to form expressions. Additionally, users are able to define variables
-(i.e. $a = \text{sqrt}(2)$, or $f=x+1$) that can be used in later lines.
+and functions (i.e. $a = \text{sqrt}(2)$, or $f(x)=x+1$) that can be used in later lines.
 
 \subsection*{Formal Syntax}
 
 \begin{tabular}{>{\texttt\bgroup}l<{\egroup} >{\texttt\bgroup}r<{\egroup} >{\texttt\bgroup}l<{\egroup}}
-    <expr> &::=& <number> \\
+    <instruction> &::=& <expr> \\
+    &|& <expr> `\textbackslash{}n' <instruction> \\
+    <expr> &::=& <ws>\textsuperscript{*}<parens><ws>\textsuperscript{*} \\
+    &|& <ws>\textsuperscript{*}<literal><ws>\textsuperscript{*} \\
+    <parens> &::=& (<expr>) \\
+    <literal> &::=& <number> \\
+    &|& <variable> \\
     <number> &::=& <digits> \\
+    &|& -<digits> \\
     &|& <digits>.<digits> \\
+    &|& -<digits>.<digits> \\
     <digits> &::=& <d><digits> \\
     &|& <d> \\
-    <d> &::=& 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+    <d> &::=& 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 \\
+    <variable> &::=& a | b | c |\dots| x | y | z \\
+    <ws> &::=& Any non-newline whitespace character.
 \end{tabular}
 
 \subsection*{Semantics}
 
-\todo[inline]{Delete this TODO and replace with as much text as is needed.}
+\begin{enumerate}[label= (\roman*)]
+    \item The primitives in CAT are numbers and variables (i.e. $1.234$ or $x$)
+    \item CAT supports many combining forms. These combining forms correspond with
+    mathematical operations that take two or more operations. These include: +, -, 
+    *, /, \^{}, Differentiate, and Integrate. Additionally, each line of a CAT program
+    corresponds to a separate expression that will be evaluated in sequence. Thus,
+    a newline can be understood as a sequence operator. Assignments are also combining
+    forms that bind a variable to some other expression. These are the only kinds of
+    statements that interact with future lines (i.e. the line $z = x + y$ would affect
+    all future uses of the variable $z$ in subsequent lines).
+    \item 
+        \begin{enumerate}[label= (\Alph*)]
+            \item CAT programs are executed by passing them to the interpreter within
+            a text file. For example, if I wanted to run the program \texttt{math.cat},
+            I would run \texttt{dotnet run math.cat}.
+            \item Evaluating a CAT program will result in two outputs representing the
+            same calculation. For each line in a CAT program, the language will attempt
+            to simplify the mathematical expression as much as it can. This simplification
+            occurs in a sequence of steps. Each step will be printed as a textual output.
+            Additionally, a \LaTeX{} file will be produced (and hopefully automatically
+            compiled into a pdf) representing the same calculation but in an easier to
+            read form.
+
+            For example, the program: \\
+            \texttt{(x+1)(x-1) - x\^{}2 \\ Differentiate x\^{}2 + y\^{}2 wrt x} \\
+            would produce the output: \\
+            \texttt{Simplifying: (x+1)(x-1) - x\^{}2 \\
+                ==> x\^{}2 + x - x - 1 - x\^{}2 \\
+                ==> 1
+            }
+            
+            \bigskip
+            \texttt{Simplifying: Differentiate x\^{}2 + y\^{}2 wrt x \\
+                ==> 2x + 0 \\
+                ==> 2x
+            }
+        \end{enumerate}
+\end{enumerate}
 
 % DO NOT DELETE ANYTHING BELOW THIS LINE
 \end{document}
