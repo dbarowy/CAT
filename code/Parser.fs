@@ -37,7 +37,7 @@ let parentheses =
         (pchar '(') 
         (precedence 0) 
         (pchar ')') 
-    |>> Parentheses <!> "parentheses"
+    <!> "parentheses"
 
 let exponentiation = 
     pseq 
