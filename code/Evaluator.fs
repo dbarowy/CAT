@@ -17,11 +17,11 @@ let rec ends_with (suffixes: string list) (s: string) =
 // Returns whether or not this type of expression should be parenthesized
 // if it is part of a more complicated expression
 let needs_parens expr =
-            match expr with
-            | Number n when n >= 0 -> false
-            | Variable _ -> false
-            // | Exponentiation _ -> false (Stylistic difference)
-            | _ -> true 
+    match expr with
+    | Number n when n >= 0 -> false
+    | Variable _ -> false
+    // | Exponentiation _ -> false (Stylistic difference)
+    | _ -> true 
 
 // Returns a pretty string representation of the expression
 let rec to_string (expression: Expression) =
@@ -68,9 +68,9 @@ let rec exprSorter e1 e2 =
         match expr with
         | Number _ -> 1
         | Variable _ -> 2
-        | Exponentiation _ -> 3
-        | Addition _ -> 4
-        | Multiplication _ -> 5
+        | Addition _ -> 3
+        | Multiplication _ -> 4
+        | Exponentiation _ -> 5
         | Sequence _ -> failwith "Can't order a sequence."
     
     let e1_ordinal = expr_to_ordinal e1
@@ -163,25 +163,20 @@ let rec flatten_ast expr =
                 es)
 
 let rec add_like_terms expr_list =
-    let are_like_terms e1 e2 =
-        match e1, e2 with
-        | Number _, Number _ -> true
-        | Variable x1, Variable x2 when x1 = x2 -> true
-        | _ -> false
-    
     let combine e1 e2 =
         match e1, e2 with
-        | Number n1, Number n2 -> Number (n1 + n2)
-        | Variable x1, Variable x2 -> Multiplication [Number 2; Variable x1]
-        | _ -> failwith "Tried to combine unlike terms."
+        | Number n1, Number n2 ->  Some (Number (n1 + n2))
+        | e1, e2 when e1 = e2 -> Some (Multiplication [Number 2; e1])
+        | Multiplication(e1::e1s), Multiplication(e2::e2s) when e1 = e2 -> 
+            Some (Multiplication [e1; Addition [Multiplication e1s; Multiplication e2s]])
+        | _ -> None
 
     let combine_with_term term terms =
         List.fold 
-            (fun (combined_term, remaining_terms, succeeded) expr ->
-                if are_like_terms combined_term expr then
-                    combine combined_term expr, remaining_terms, true
-                else
-                    combined_term, expr::remaining_terms, succeeded)
+            (fun (combined_term, leftover_terms, succeeded) expr ->
+                match combine combined_term expr with
+                | Some expr -> expr, leftover_terms, true
+                | None -> combined_term, expr::leftover_terms, succeeded)
             (term, [], false)
             terms
     
@@ -189,36 +184,32 @@ let rec add_like_terms expr_list =
     | e::es ->
         let e', es', s1 = combine_with_term e es
         let other_terms, s2 = add_like_terms es'
-        e'::other_terms, s1 || s2
+        (reorder_terms (flatten_ast e'))::other_terms, s1 || s2
     | [] -> [], false
 
 let rec multiply_like_terms expr_list =
-    let are_like_terms e1 e2 =
-        match e1, e2 with
-        | Number _, Number _ -> true
-        | Variable x1, Variable x2 when x1 = x2 -> true
-        | e1, Exponentiation (e2, _) when e1 = e2 -> true
-        | Exponentiation (e1, _), e2 when e1 = e2 -> true
-        | Exponentiation (e1, _), Exponentiation(e2, _) when e1 = e2 -> true
-        | _ -> false
-    
     let combine e1 e2 =
         match e1, e2 with
-        | Number n1, Number n2 -> Number (n1 * n2)
-        | Variable x1, Variable x2 -> Exponentiation (Variable x1, Number 2)
-        | Exponentiation (e1, exponent1), Exponentiation (e2, exponent2) -> 
-            Exponentiation (e1, Addition [exponent1; exponent2])
-        | e1, Exponentiation (e2, exponent) -> Exponentiation (e1, Addition [exponent; Number 1])
-        | Exponentiation (e1, exponent), e2 -> Exponentiation (e1, Addition [exponent; Number 1])
-        | _ -> failwith "Tried to combine unlike terms."
+        | Number n1, Number n2 -> 
+            Some (Number (n1 * n2))
+        | Variable x1, Variable x2 when x1 = x2 -> 
+            Some (Exponentiation (Variable x1, Number 2))
+        | Exponentiation (e1, exponent1),
+          Exponentiation (e2, exponent2) 
+          when e1 = e2 -> 
+            Some (Exponentiation (e1, Addition [exponent1; exponent2]))
+        | e1, Exponentiation (e2, exponent) when e1 = e2 -> 
+            Some (Exponentiation (e1, Addition [exponent; Number 1]))
+        | Exponentiation (e1, exponent), e2 when e1 = e2-> 
+            Some (Exponentiation (e1, Addition [exponent; Number 1]))
+        | _ -> None
 
     let combine_with_term term terms =
         List.fold 
-            (fun (combined_term, remaining_terms, succeeded) expr ->
-                if are_like_terms combined_term expr then
-                    combine combined_term expr, remaining_terms, true
-                else
-                    combined_term, expr::remaining_terms, succeeded)
+            (fun (combined_term, leftover_terms, succeeded) expr ->
+                match combine combined_term expr with
+                | Some expr -> expr, leftover_terms, true
+                | None -> combined_term, expr::leftover_terms, succeeded)
             (term, [], false)
             terms
     
@@ -226,7 +217,7 @@ let rec multiply_like_terms expr_list =
     | e::es ->
         let e', es', s1 = combine_with_term e es
         let other_terms, s2 = multiply_like_terms es'
-        e'::other_terms, s1 || s2
+        (reorder_terms (flatten_ast e'))::other_terms, s1 || s2
     | [] -> [], false
 
 (*
@@ -242,7 +233,11 @@ let rec simplify (expression: Expression) =
     | Addition(es) -> 
         let combined_terms, succeeded = add_like_terms es
         if succeeded then
-            let expression' = Addition(combined_terms)
+            let expression' = 
+                if combined_terms.Length > 1 then 
+                    reorder_terms (flatten_ast (Addition combined_terms)) 
+                else 
+                    List.head combined_terms
             expression'::(simplify expression')
         else
             let simplification_list: Expression list = simplify_list es Addition []
@@ -253,7 +248,11 @@ let rec simplify (expression: Expression) =
     | Multiplication(es) -> 
         let combined_terms, succeeded = multiply_like_terms es
         if succeeded then
-            let expression' = Multiplication(combined_terms)
+            let expression' = 
+                if combined_terms.Length > 1 then 
+                    reorder_terms (flatten_ast (Multiplication combined_terms)) 
+                else 
+                    List.head combined_terms
             expression'::(simplify expression')
         else
             let simplification_list = simplify_list es Multiplication []
@@ -261,12 +260,29 @@ let rec simplify (expression: Expression) =
                 simplification_list @ (simplify (List.last simplification_list))
             else
                 []
-    | Exponentiation(expbase, exponent) -> 
+    | Exponentiation(expbase, exponent) ->
+        // First simplify the base
         let base_simplifications = simplify expbase
-        if base_simplifications.Length = 0 then
-            
-        else
-            List.map (fun e -> Exponentiation(e, exponent)) // WIP <----------------------------------------------------------------------
+        let combined_base_simplifications =
+            if base_simplifications.Length = 0 then
+                []
+            else
+                List.map (fun e -> Exponentiation(e, exponent)) base_simplifications
+        // Track which base to use in the exponent simplifcations
+        let final_base_version = 
+            if base_simplifications.Length > 0 then List.last base_simplifications else expbase
+        
+        // Simplify the exponent
+        let exponent_simplifications = simplify exponent
+        let combined_exponent_simplifications = 
+            if exponent_simplifications.Length = 0 then
+                    []
+            else
+                List.map (fun e -> Exponentiation(final_base_version, e)) exponent_simplifications
+
+        // Combine the series of simplifications
+        combined_base_simplifications @ combined_exponent_simplifications
+        
     | Sequence(es) -> failwith "Sequence should not be passed to simplify."
 
 // Returns a list of progressive simplifications of a list of expressions that are combined by the expr_type operation
@@ -281,14 +297,14 @@ and simplify_list expr_list expr_type prev =
             (simplify_list es expr_type (prev @ [e]))
         else
             // Otherwise, recreate the overall expression for each simplification step
-            (List.map (fun e -> expr_type (prev @ e::es)) simplifications) 
+            (List.map (fun e -> reorder_terms (flatten_ast (expr_type (prev @ e::es)))) simplifications) 
                 @ (simplify_list es expr_type (prev @ [List.last simplifications]))
     | [] -> []
 
 let process_expression (expression: Expression) =
     printfn "Simplifying: %s" (to_string expression)
-    let expressions = expression::(simplify expression)
-    printfn "%A" (reorder_terms (flatten_ast (List.last expressions)))
+    let expressions = (reorder_terms (flatten_ast expression))::(simplify expression)
+    // printfn "%A" (expressions)
     
     List.fold
         (fun _ e -> 
