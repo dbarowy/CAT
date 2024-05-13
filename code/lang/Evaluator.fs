@@ -66,7 +66,7 @@ let rec to_string (expression: Expression) =
 
 let process_expression (expression: Expression) =
     printfn "Simplifying: %s" (to_string expression)
-    let expressions = (reorder_terms (flatten_ast expression))::(simplify expression)
+    let expressions = (reorder_terms (flatten_ast expression))::(simplify expression true)
     // printfn "%A" (expressions)
     
     // Print out each subsequent simplification and return the final version

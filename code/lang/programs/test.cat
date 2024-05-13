@@ -1,1 +1,35 @@
-a - b - a + b
+xy + yx
+yx + xy
+xy + 2xy
+2xy + xy
+3xy + 4xy
+4xy + 3xy
+axy + 3xy
+3xy + axy
+bxy + axy
+axy + bxy
+axy + axy
+abx + cdx
+dcx + bax
+abcmnjuv + ghcmnjyz
+xx + xx
+x^2+x^2
+xx + x^2
+x^2 + xx
+x^2 + 2x^2
+2x^2 + x^2
+3x^2 + 4x^2
+4x^2 + 3x^2
+ax^2 + x^2
+x^2 + ax^2
+ax^2 + bx^2
+3x^2 + ax^2
+ax^2 + 3x^2
+ayx^2 + byx^2
+byx^2 + ayx^2
+a(xy)^2 + b(xy)^2
+x^2 y^2 + (xy)^2
+(xy)^2 + x^2 y^2
+(axy)^2 + b^2 x^2 y^2
+b^2 x^2 y^2 + (axy)^2
+(5xy)^2 + 7^2 x^2 y^2
