@@ -19,7 +19,7 @@ type TestClass () =
             Assert.AreEqual 
                 ([Number 3; Number -1; Number 30; Number (7.0/8.0);
                     Number 16; Number 132; Number 132; Number 132; Number 10],
-                (evaluate ast))
+                (fst (evaluate ast)))
         | None ->
             Assert.IsTrue false
     
@@ -40,21 +40,31 @@ type TestClass () =
                         Exponentiation (Variable 'z', Number 2)
                     ]; 
                     Addition [
-                        Multiplication [Number 2; Variable 'x'; Variable 'y'];
-                        Multiplication [Number 2; Variable 'x'; Variable 'z'];
-                        Multiplication [Number 2; Variable 'y'; Variable 'z'];
+                        Multiplication [
+                            Number 2;
+                            Addition [
+                                Multiplication [
+                                    Variable 'y';
+                                    Variable 'z'
+                                ];
+                                Multiplication [
+                                    Variable 'x';
+                                    Addition [
+                                        Variable 'y';
+                                        Variable 'z'
+                                    ]
+                                ]
+                            ]
+                        ]
                         Exponentiation (Variable 'x', Number 2);
                         Exponentiation (Variable 'y', Number 2);
-                        Exponentiation (Variable 'z', Number 2);
+                        Exponentiation (Variable 'z', Number 2)
                     ]; 
-                    Addition [
-                        Variable 'x';
-                        Number -1
-                    ]; 
+                    Number -1
                     Multiplication [
                         Number 4;
                         Exponentiation (Number 16, Variable 'x')
                     ]],
-                (evaluate ast))
+                (fst (evaluate ast)))
         | None ->
             Assert.IsTrue false

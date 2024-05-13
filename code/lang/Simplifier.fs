@@ -103,6 +103,125 @@ let rec flatten_ast expr =
                 []
                 es)
 
+let rec expand expression =
+    // Preprocess expression, so it's in the expected form
+    let expression = reorder_terms (flatten_ast expression)
+
+    match expression with
+    | Number _ | Variable _ ->
+        [] // Maximally expanded already
+    | Exponentiation(exponent_base, exponent) ->
+        expand_exponentiation exponent_base exponent
+    | Multiplication(es) -> 
+        expand_multiplication es
+    | Addition(es) -> 
+        expand_addition es
+    | Sequence(es: Expression list) -> 
+        failwith "Sequence should not be passed to expand."
+// Returns a list of progressive simplifications of a list of expressions 
+// The list of expressions are combined by the combining_type operation into 
+// a single expression (for example Addition or Multiplication)
+and expand_list_of_terms terms combining_type already_simplified_terms =
+    match terms with
+    | e::es ->
+        // Get the list of expansions for this expression within the larger list
+        let expansions = expand e
+
+        // If there weren't any changes, then disregard this element
+        if expansions.Length = 0 then
+            (expand_list_of_terms es combining_type (already_simplified_terms @ [e])) // Get rid of list concatenations
+        else
+            // Otherwise, recreate the overall expression for each expansion step
+            (List.map 
+                (fun e -> 
+                    reorder_terms (flatten_ast (combining_type (already_simplified_terms @ e::es)))) 
+                expansions) 
+                @ (expand_list_of_terms es combining_type (already_simplified_terms @ [List.last expansions]))
+    | [] -> []
+
+and expand_addition terms =
+    // Try to expand each term individually
+    expand_list_of_terms terms Addition []
+
+
+and expand_multiplication terms =
+    // Try to expand each term individually
+    let expansions = expand_list_of_terms terms Multiplication []
+    if expansions.Length > 0 then
+        expansions @ (expand (List.last expansions))
+    else
+    
+    if List.exists (fun e -> match e with | Addition _ -> true | _ -> false) terms then
+        // In order to avoid multiplying each term by one, we have to manually extract the first term
+        // before we begin distributing, but we need to break it up if it's an addition
+        let first_term = List.head terms
+        let starting_terms =
+            match first_term with
+            | Addition es -> es
+            | _ -> [first_term]
+        
+        let distributed_expression = 
+            reorder_terms (flatten_ast (Addition (
+                // Process every term in product, distributing each addition
+                List.fold 
+                    (fun current_terms term ->
+                        // If the term is an Addition, we need to create a term
+                        // for each value in the sum, otherwise we just multiply
+                        // each existing state by the term we process
+                        match term with
+                        | Addition es ->
+                            List.fold
+                                (fun distributed_terms addend ->
+                                    distributed_terms @ List.map (fun e -> Multiplication [addend; e]) current_terms)
+                                []
+                                es
+                        | _ ->
+                            List.map (fun e -> Multiplication [term; e]) current_terms)
+                    starting_terms
+                    (List.tail terms)
+            )))
+        distributed_expression::(expand distributed_expression)
+    else
+    
+    // Nothing to expand
+    []
+
+and expand_exponentiation exponent_base exponent =
+    // First expand the base
+    let base_expansions = expand exponent_base
+    let combined_base_expansions =
+        if base_expansions.Length = 0 then
+            []
+        else
+            List.map (fun e -> Exponentiation(e, exponent)) base_expansions
+    // Track which base to use in the exponent simplifcations
+    let final_base_version = 
+        if base_expansions.Length > 0 then List.last base_expansions else exponent_base
+    
+    // Expand the exponent
+    let exponent_expansions = expand exponent
+    let combined_exponent_expansions = 
+        if exponent_expansions.Length = 0 then
+                []
+        else
+            List.map (fun e -> Exponentiation(final_base_version, e)) exponent_expansions
+    
+    let final_exponent_version =
+        if exponent_expansions.Length > 0 then List.last exponent_expansions else exponent
+
+    let combined_expr =
+        match final_base_version, final_exponent_version with
+        | b, Addition es ->
+            let split_version = Multiplication (List.map (fun e -> Exponentiation (b, e)) es)
+            split_version::(expand split_version)
+        | Multiplication bs, e ->
+            let distributed_version = Multiplication (List.map (fun b -> Exponentiation (b, e)) bs)
+            distributed_version::(expand distributed_version)
+        | _ -> []
+
+    // Combine the series of simplifications
+    combined_base_expansions @ combined_exponent_expansions @ combined_expr 
+
 let rec combine_like_terms expr_list combiner =
     // Combines as many terms as possible with the given term,
     // using the provided combiner
@@ -134,12 +253,40 @@ let rec combine_like_terms expr_list combiner =
         combined_term::other_terms
     | [] -> []
 
+// Removes pairs of terms that fully or partially cancel out in addition expressions
+// Note it is necessary to flatten/reorder after calling this function
+let rec cancel_terms terms =
+    match terms with
+    | term::terms' ->
+        let coefficent, expr = 
+            match term with 
+            | Multiplication (Number n::es) -> n, if es.Length > 1 then Multiplication es else List.head es
+            | e -> 1, e
+        let coefficient', other_terms =
+            List.fold
+                (fun (coefficent, other_terms) e ->
+                    match e with
+                    | Multiplication (Number n::es) when (if es.Length > 1 then Multiplication es else if es.Length = 1 then List.head es else Multiplication []) = expr ->
+                        coefficent + n, other_terms
+                    | es when es = expr ->
+                        coefficent + 1.0, other_terms
+                    | e -> coefficent, e::other_terms)
+                (coefficent, [])
+                terms'
+        match coefficient' with
+        | 0.0 -> Number 0::(cancel_terms other_terms)
+        | 1.0 -> expr::(cancel_terms other_terms)
+        | _ when expr = Number 0 -> Number 0::(cancel_terms other_terms) // To avoid "factoring 0s"
+        | _ -> (Multiplication [Number coefficient'; expr])::(cancel_terms other_terms)
+    | [] -> []
+
 // Tries to simplify the addition of two expressions into a single expression
-let addition_term_combiner expand e1 e2 =
+let addition_term_combiner e1 e2 =
     match e1, e2 with
     | Number n1, Number n2 -> 
         Some (Number (n1 + n2))
     
+    // Addition by 0
     | e1, Number 0.0 -> Some e1
     | Number 0.0, e2 -> Some e2
     
@@ -154,6 +301,8 @@ let addition_term_combiner expand e1 e2 =
         Some (Multiplication [Number (1.0 + n); e2])
     | Multiplication [Number n; Variable x1], Variable x2 when x1 = x2 -> 
         Some (Multiplication [Number (1.0 + n); Variable x1])
+    | Variable x1, Multiplication [Number n; Variable x2] when x1 = x2 -> 
+        Some (Multiplication [Number (1.0 + n); Variable x1])
     
     // Technically also done by the factoring rules, but this is a more human shortcut
     // and will also be applied when we are expanding
@@ -165,29 +314,30 @@ let addition_term_combiner expand e1 e2 =
         Some (Multiplication ((Number (1.0 + n))::e1s))
 
     // Factoring rules (some are redundant but more efficient/look more natural)
-    | Multiplication e1s, Multiplication (e2::e2s) when e1s = e2s && not expand -> 
+    | Multiplication e1s, Multiplication (e2::e2s) when e1s = e2s -> 
         Some (Multiplication ((Addition [Number 1; e2])::e1s))
-    | Multiplication (e1::e1s), Multiplication e2s when e1s = e2s && not expand -> 
+    | Multiplication (e1::e1s), Multiplication e2s when e1s = e2s -> 
         Some (Multiplication ((Addition [Number 1; e1])::e1s))
-    | Multiplication(e1::e1s), Multiplication(e2::e2s) when e1 = e2 && not expand = false -> 
-        Some (Multiplication [e1; Addition [Multiplication e1s; Multiplication e2s]]) 
-    | Multiplication(e1::e1s), Multiplication(e2::e2s) when e1s = e2s && not expand = false -> 
+    | Multiplication(e1::e1s), Multiplication(e2::e2s) when e1 = e2 -> 
+        Some (reorder_terms (flatten_ast ((Multiplication [e1; Addition [(Multiplication e1s); (Multiplication e2s)]]))))
+    | Multiplication(e1::e1s), Multiplication(e2::e2s) when e1s = e2s -> 
         Some (Multiplication ((Addition [e1; e2])::e1s))
+    
+    // More expensive but more general factoring
     | Multiplication e1s, Multiplication e2s 
-        when not (Set.isEmpty (Set.intersect (Set.ofList e1s) (Set.ofList e2s))) 
-        && not expand ->
+        when not (Set.isEmpty (Set.intersect (Set.ofList e1s) (Set.ofList e2s))) ->
         let intersection = Set.intersect (Set.ofList e1s) (Set.ofList e2s)
         let otherE1s = Set.toList (Set.difference (Set.ofList e1s) intersection)
         let otherE2s =  Set.toList (Set.difference (Set.ofList e2s) intersection)
         Some (reorder_terms (flatten_ast (Multiplication ((Addition [Multiplication otherE1s; Multiplication otherE2s])::(Set.toList intersection)))))
     | e1, Multiplication e2s
-        when List.contains e1 e2s && not expand ->
+        when List.contains e1 e2s ->
         let other_terms = List.filter (fun e -> e <> e1) e2s
         let as_expression = 
             if other_terms.Length > 1 then Multiplication other_terms else List.head other_terms
         Some (reorder_terms (flatten_ast (Multiplication [e1; Addition [Number 1; as_expression]])))
     | Multiplication e1s, e2
-        when List.contains e2 e1s && not expand ->
+        when List.contains e2 e1s ->
         let other_terms = List.filter (fun e -> e <> e2) e1s
         let as_expression = 
             if other_terms.Length > 1 then Multiplication other_terms else List.head other_terms
@@ -195,7 +345,7 @@ let addition_term_combiner expand e1 e2 =
     | _ -> None
 
 // Tries to simplify the multiplication of two expressions into a single expression
-let multiplication_term_combiner expand e1 e2 =
+let multiplication_term_combiner e1 e2 =
     match e1, e2 with
     | Number n1, Number n2 -> 
         Some (Number (n1 * n2))
@@ -203,24 +353,24 @@ let multiplication_term_combiner expand e1 e2 =
         Some (Exponentiation (e1, Number 2))
     | Exponentiation (e1, exponent1),
         Exponentiation (e2, exponent2) 
-        when e1 = e2 && not expand -> 
+        when e1 = e2 -> 
         Some (Exponentiation (e1, Addition [exponent1; exponent2]))
     | Exponentiation (e1, exponent1),
         Exponentiation (e2, exponent2) 
-        when exponent1 = exponent2 && not expand -> 
+        when exponent1 = exponent2 -> 
         Some (reorder_terms (flatten_ast (Exponentiation (Multiplication [e1; e2], exponent1))))
     | e1, Exponentiation (e2, exponent) 
-        when e1 = e2 && not expand -> 
+        when e1 = e2 -> 
         Some (Exponentiation (e1, Addition [exponent; Number 1]))
     | Exponentiation (e1, exponent), e2 
-        when e1 = e2 && not expand -> 
+        when e1 = e2 -> 
         Some (Exponentiation (e1, Addition [exponent; Number 1]))
     | _ -> None
 
 (*
  * @return A list of progressively more simplified versions of the expression
  *)
-let rec simplify (expression: Expression)(expand: bool) =
+let rec simplify (expression: Expression) =
     // Preprocess expression, so it's in the expected form
     let expression = reorder_terms (flatten_ast expression)
 
@@ -228,92 +378,65 @@ let rec simplify (expression: Expression)(expand: bool) =
     | Number _ | Variable _ ->
         [] // Maximally simplified already
     | Exponentiation(exponent_base, exponent) ->
-        simplify_exponentiation exponent_base exponent expand
+        simplify_exponentiation exponent_base exponent
     | Multiplication(es) -> 
-        simplify_multiplication es expand
+        simplify_multiplication es
     | Addition(es) -> 
-        simplify_addition es expand
+        simplify_addition es
     | Sequence(es) -> 
         failwith "Sequence should not be passed to simplify."
 
 // Returns a list of progressive simplifications of a list of expressions 
 // The list of expressions are combined by the combining_type operation into 
 // a single expression (for example Addition or Multiplication)
-and simplify_list_of_terms terms combining_type already_simplified_terms expand =
+and simplify_list_of_terms terms combining_type already_simplified_terms =
     match terms with
     | e::es ->
         // Get the list of simplifications for this expression within the larger list
-        let simplifications = simplify e expand
+        let simplifications = simplify e
 
         // If there weren't any changes, then disregard this element
         if simplifications.Length = 0 then
-            (simplify_list_of_terms es combining_type (already_simplified_terms @ [e]) expand) // Get rid of list concatenations
+            (simplify_list_of_terms es combining_type (already_simplified_terms @ [e])) // Get rid of list concatenations
         else
             // Otherwise, recreate the overall expression for each simplification step
             (List.map (fun e -> reorder_terms (flatten_ast (combining_type (already_simplified_terms @ e::es)))) simplifications) 
-                @ (simplify_list_of_terms es combining_type (already_simplified_terms @ [List.last simplifications]) expand)
+                @ (simplify_list_of_terms es combining_type (already_simplified_terms @ [List.last simplifications]))
     | [] -> []
 
-and simplify_addition terms expand =
-    printfn "Terms: %A, expand: %A" terms expand
+and simplify_addition terms =
+    // Try to simplify each term individually
+    let simplifications: Expression list = simplify_list_of_terms terms Addition []
+    if simplifications.Length <> 0 then
+        simplifications @ (simplify (List.last simplifications))
+    else
+
+    // Try to cancel any terms we can (we do this seperately from combining like terms
+    // in order to avoid missing the opportunity to do so
+    let cancelled_expr =reorder_terms (flatten_ast (Addition (cancel_terms terms)))
+    if cancelled_expr <> Addition terms then
+        cancelled_expr::(simplify cancelled_expr)
+    else
+
     // Combine like terms in the sum
-    let combined_terms = combine_like_terms terms (addition_term_combiner expand)
-    printfn "Combined Terms: %A" combined_terms
+    let combined_terms = combine_like_terms terms addition_term_combiner
     if terms <> combined_terms then
         // Check if we reduced it to a single term
         match combined_terms with
-        | [expr] -> expr::(simplify expr expand)
+        | [expr] -> expr::(simplify expr)
         | exprs -> 
             let expr = reorder_terms (Addition exprs)
-            expr::(simplify expr expand)
-    else
-
-    if expand then
-        let expanded_terms_simplifications = simplify_list_of_terms terms Addition [] true
-        
-        // Once we've expanded we no longer need to
-        if expanded_terms_simplifications.Length <> 0 then
-            expanded_terms_simplifications @ (simplify (List.last expanded_terms_simplifications) false)
-        else
-            simplify (Addition terms) false
-    else
-
-    // Try to simplify each term individually
-    let simplifications: Expression list = simplify_list_of_terms terms Addition [] expand
-    if simplifications.Length <> 0 then
-        simplifications @ (simplify (List.last simplifications) expand)
+            expr::(simplify expr)
     else
 
     // No other simplifications to try
     []
 
-and simplify_multiplication terms expand =
-    let combined_terms = combine_like_terms terms (multiplication_term_combiner expand)
-    if terms <> combined_terms then
-        // Check if we reduced it to a single term
-        match combined_terms with
-        | [expr] -> expr::(simplify expr expand)
-        | exprs -> 
-            let expr = reorder_terms (Multiplication exprs)
-            expr::(simplify expr expand)
-    else
-
-    if expand then
-        let expanded_terms_simplifications = simplify_list_of_terms terms Multiplication [] true
-        
-        // Insert distributing here <----------------------------------------
-
-        // Once we've expanded we no longer need to
-        if expanded_terms_simplifications.Length <> 0 then
-            expanded_terms_simplifications @ (simplify (List.last expanded_terms_simplifications) false)
-        else
-            simplify (Multiplication terms) false
-    else
-
+and simplify_multiplication terms =
     // Try to simplify each term individually
-    let simplifications: Expression list = simplify_list_of_terms terms Multiplication [] expand
+    let simplifications: Expression list = simplify_list_of_terms terms Multiplication []
     if simplifications.Length <> 0 then
-        simplifications @ (simplify (List.last simplifications) expand)
+        simplifications @ (simplify (List.last simplifications))
     else
 
     // Check if we multiply by 0
@@ -321,12 +444,32 @@ and simplify_multiplication terms expand =
         [Number 0]
     else
 
+    let combined_terms = combine_like_terms terms multiplication_term_combiner
+    if terms <> combined_terms then
+        // Check if we reduced it to a single term
+        match combined_terms with
+        | [expr] -> expr::(simplify expr)
+        | exprs -> 
+            let expr = reorder_terms (Multiplication exprs)
+            expr::(simplify expr)
+    else
+
+    // Remove any redundant multiplications by 1
+    let non_one_terms = List.filter (fun e -> e <> Number 1) terms
+    let filtered_product =
+        if non_one_terms.Length > 1 then Multiplication non_one_terms else
+            if non_one_terms.Length = 1 then List.head non_one_terms else
+                Number 1
+    if filtered_product <> Multiplication terms then
+        filtered_product::(simplify filtered_product)
+    else 
+
     // No other simplifications to try
     []
 
-and simplify_exponentiation exponent_base exponent expand =
+and simplify_exponentiation exponent_base exponent =
     // First simplify the base
-    let base_simplifications = simplify exponent_base expand
+    let base_simplifications = simplify exponent_base
     let combined_base_simplifications =
         if base_simplifications.Length = 0 then
             []
@@ -337,7 +480,7 @@ and simplify_exponentiation exponent_base exponent expand =
         if base_simplifications.Length > 0 then List.last base_simplifications else exponent_base
     
     // Simplify the exponent
-    let exponent_simplifications = simplify exponent expand
+    let exponent_simplifications = simplify exponent
     let combined_exponent_simplifications = 
         if exponent_simplifications.Length = 0 then
                 []
@@ -349,18 +492,13 @@ and simplify_exponentiation exponent_base exponent expand =
 
     let combined_expr =
         match final_base_version, final_exponent_version with
+        | e, Number 0.0 ->
+            [Number 1]
         | Number b, Number e ->
             [Number (b ** e)]
-        | b, Addition es when expand ->
-            let split_version = Multiplication (List.map (fun e -> Exponentiation (b, e)) es)
-            split_version::(simplify split_version true)
-        | Multiplication bs, e when expand ->
-            let distributed_version = Multiplication (List.map (fun b -> Exponentiation (b, e)) bs)
-            distributed_version::(simplify distributed_version true)
-
+        | Number b, Multiplication ((Number n)::es) ->
+            [flatten_ast (Exponentiation (Number (b ** n), Multiplication es))]
         | _ -> []
-    
-    // Insert expanding here
 
     // Combine the series of simplifications
     combined_base_simplifications @ combined_exponent_simplifications @ combined_expr // Should there be a recursive simplify call here?
