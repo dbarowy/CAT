@@ -34,11 +34,22 @@ let parentheses =
         (pchar ')') 
     <!> "parentheses"
 
+let rec unfold_exponentiation es =
+    match es with
+    | [e] -> e
+    | e::es' -> Exponentiation (e, (unfold_exponentiation es'))
+    | [] -> failwith "Don't pass unfold_exponentiation an empty list."
+
 let exponentiation = 
     pseq 
         (precedence 3) 
-        (pright (pad (pchar '^')) (precedence 3))
-        (fun (e1, e2) -> Exponentiation (e1, e2))
+        (pmany1 
+            (pright 
+                (pad (pchar '^')) 
+                (precedence 3)
+            ) 
+        )
+        (fun (e1, es) -> unfold_exponentiation (e1::es))
     <!> "Exponentiation"
 let multiplicationOrDivision = 
     pseq 

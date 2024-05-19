@@ -1,5 +1,4 @@
 ﻿open System.IO
-open System.Diagnostics
 open Parser
 open Evaluator
 

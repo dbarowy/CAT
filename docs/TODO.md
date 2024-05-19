@@ -1,4 +1,4 @@
- - Update docs about decimal points
+ + Update docs about decimal points
  + Add implicit multiplication for variables
  + Make exponentiation (maybe its actually multiplication?) include parens when negative is in exponent
  + A distribute function that happens first (Make the simplify functions take an expand flag)
@@ -9,3 +9,5 @@
  - Division stuff
  - Allow factoring directly from exponentials
  + Add error checking to file writing
+ - Does BNF allow ambiguous exponentiation
+ - Does BNF disallow the weird illegal parse
