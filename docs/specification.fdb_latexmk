@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1715641238.42685 "/Users/michael/Documents/cs334/cs334-project-mjf5/docs/specification.tex" "specification.pdf" "specification" 1715641239.12037 0
-  "/Users/michael/Documents/cs334/cs334-project-mjf5/docs/specification.tex" 1715641238.22966 16957 4fd84ba7e13adda1f2784f4c7c289675 ""
+["pdflatex"] 1716153194.23006 "/Users/michael/Documents/cs334/cs334-project-mjf5/docs/specification.tex" "specification.pdf" "specification" 1716153194.91223 0
+  "/Users/michael/Documents/cs334/cs334-project-mjf5/docs/specification.tex" 1716153193.97022 16960 caec61f86aa8c85d55b26ef4411649cc ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2024/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -216,9 +216,9 @@
   "/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1715583158.02693 5467645 128b85b7cde5f5edc5cb7f1dd7ff8736 ""
   "/usr/local/texlive/2024/texmf-var/web2c/pdftex/pdflatex.fmt" 1715583087 8221433 366464a01b6bc10ca904a74dfdb4a98d ""
   "/usr/local/texlive/2024/texmf.cnf" 1710266656 577 e590dabc9e28c5b61546e15f63eebcdf ""
-  "specification.aux" 1715641239.05451 162 59504cb8f8bee0a3f0488d753cb23a1e "pdflatex"
-  "specification.out" 1715641238.92044 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "specification.tex" 1715641238.22966 16957 4fd84ba7e13adda1f2784f4c7c289675 ""
+  "specification.aux" 1716153194.84455 162 59504cb8f8bee0a3f0488d753cb23a1e "pdflatex"
+  "specification.out" 1716153194.71265 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "specification.tex" 1716153193.97022 16960 caec61f86aa8c85d55b26ef4411649cc ""
   (generated)
   "specification.aux"
   "specification.log"

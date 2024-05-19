@@ -612,10 +612,11 @@ let rec to_latex expression =
 
 let process_expression (expression: Expression) =
     printfn "Expanding: %s" (to_string expression)
+    let header_latex = "Expanding: $" + to_latex expression + "$\n"
     let expansions = (reorder_terms (flatten_ast expression))::(expand expression)
 
     // Print out each subsequent expansion and return the final version
-    let expanded_expression, latex =
+    let expanded_expression, expansion_latex =
         List.fold
             (fun (_, latex) e -> 
                 printfn "==> %s" (to_string e)
@@ -624,6 +625,7 @@ let process_expression (expression: Expression) =
             expansions
     
     printfn "Simplifying: %s" (to_string expanded_expression)
+    let latex = header_latex + expansion_latex + "Simplifying: $" + to_latex expanded_expression + "$\n"
     let simplifications = (reorder_terms (flatten_ast expanded_expression))::(simplify expanded_expression)
 
     // Print out each subsequent expansion and return the final version
@@ -637,6 +639,7 @@ let process_expression (expression: Expression) =
 let LATEX_HEADER = 
     "\\documentclass[10pt]{article}\n" +
     "\\usepackage[left=1in,top=1in,right=1in,bottom=1in]{geometry}\n" +
+    "\\setlength{\\parindent}{0pt}\n" +
     "\\begin{document}\n"
 let LATEX_FOOTER = "\\end{document}"
 
@@ -647,12 +650,12 @@ let rec evaluate (expression: Expression) =
             match es with 
             | [e] ->
                 let expr, latex = process_expression e
-                [expr], "Simplifying: $" + to_latex e + "$\n" + latex
+                [expr], "\\subsection*{Expression: $" + to_latex e + "$}\n" + latex
             | e::es -> 
                 let expr, latex = process_expression e
                 printfn ""
                 let other_exprs, other_latex = rec_evaluator (Sequence es)
-                expr::other_exprs, "Simplifying: $" + to_latex e + "$\n" + latex + other_latex
+                expr::other_exprs, "\\subsection*{Expression: $" + to_latex e + "$}\n" + latex + other_latex
             | [] -> failwith "Invalid Sequence. There must be at least one expression."
         | _ -> failwith "Top layer expression must be a sequence."
     let final_expression, latex = rec_evaluator expression
