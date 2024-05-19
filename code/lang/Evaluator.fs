@@ -22,7 +22,7 @@ let needs_parens expr =
     match expr with
     | Number n when n >= 0 -> false
     | Variable _ -> false
-    // | Exponentiation _ -> false (Stylistic difference)
+    | Exponentiation _ -> false //(Stylistic difference)
     | _ -> true 
 
 // Returns a pretty string representation of the expression
@@ -38,6 +38,9 @@ let rec to_string (expression: Expression) =
     | Multiplication(es) -> 
         // Check whether or not we can write it as an implicit multiplication
         match es with
+        | (Exponentiation (b1,e1))::(Exponentiation (b2,e2))::es ->
+            "(" + to_string (Exponentiation (b1, e1)) + ")" 
+                + to_string (Multiplication ([Exponentiation (b2, e2)] @ es))
         | e::es -> 
             let s = if needs_parens e then "(" + to_string e + ")" else to_string e
             let tail = to_string (Multiplication es)
