@@ -233,6 +233,20 @@ type TestClass () =
             Assert.IsTrue false
 
     [<TestMethod>]
+    member this.divideBySelfTest () =
+        let program: string = "(x + y)/(x + y)"
+        let some_ast = parse program false
+        match some_ast with
+        | Some (ast) -> 
+            Assert.AreEqual 
+                ([
+                    Number 1
+                ],
+                (fst (evaluate ast)))
+        | None ->
+            Assert.IsTrue false
+
+    [<TestMethod>]
     member this.factorExpTest () =
         let program = "x^2y^2 + (xy)^2z"
         let some_ast = parse program false

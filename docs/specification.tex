@@ -52,7 +52,7 @@
 
 % Edit below as instructed
 
-\usepackage{array}
+\usepackage{array, longtable}
 
 \title{CAT Language Specification} % Replace SnappyLanguageName with your project's name
 
@@ -82,6 +82,11 @@ its final expression. By working through the intermediate steps of the calculati
 CAT should allow its users to understand why such restrictions were imposed and 
 what the limits of the calculation would be if such assumptions were not made.
 
+\subsection*{Video Presentation}
+View the video \underline{\href{https://youtu.be/nhKoWXYoXG4}{here}} for a video explanation
+of CAT! If the above link doesn't work you can type the following into your browser:
+\href{https://youtu.be/nhKoWXYoXG4}{https://youtu.be/nhKoWXYoXG4}
+
 \subsection*{Design Principles}
 
 The primary goal of CAT is to produce easily understandable calculations. 
@@ -92,106 +97,181 @@ tradeoff in terms of speed as it is necessary to work through the intermediate
 details of a calculation sufficiently to make them human readable.
 
 \subsection*{Examples}
-Turns out teaching a computer math is hard... these tweaked examples reflect
-a shift in priorities I had. Basic symbolic manipulation of algebraic expressions
-has turned out to be a mucher rich (and way more challenging!) task than I initially
-thought it would be. Instead of calculus manipulations being a primary focus, I view
-them more as stretch goals (maybe I can do derivatives, but I don't think integrals
-are feasible), and I'm now primarily concerned with making the language
-display how you could manipulate an algebraic expression. CAT is capable of most core 
-algebraic (as the below examples demonstrate); however, there are essentially
-limitless other simplification capabilities that could be added (see the 3rd example
-for a current limitation of CAT), so I am more concerned with making CAT produce nice
-output for its current capabilities than making CAT fully general.
+The following examples are included in a folder called \texttt{examples}. You can run
+these examples using the interpreter. For example, to run example 1, you can
+use the command \texttt{dotnet run examples/example1.cat} at the project level.
+Two things will happen when you run a program: the simplification process will
+be printed out as textual output, and a \LaTeX{} file will be created in the same
+directory with the corresponding name (i.e. running the above command will
+produce the file \texttt{example1.tex} in the examples directory). You can compile
+the \LaTeX{} file into a pdf using whatever your standard \LaTeX{} compiler is
+(for example, pdflatex).
 
 \begin{enumerate}
     \item The following example illustrates how each line of a CAT program is
-    treated separately so long as there are no assignments. The first line would
-    simplify to $-1$, and the second line would simplify to $2x$ (derivatives
-    are not currently implemented; however, this example demonstrates how
-    they would work). \\
-    \texttt{(x+1)(x-1) - x\^{}2 \\ Differentiate x\^{}2 + y\^{}2 wrt x}
+    a separate expression to be simplified. The first line here simplifies to
+    simplify to $2$, and the second line simplifies to $-1$ .
 
-    Sample output: \\
-    \texttt{Expanding: (x + 1)(x + (-1)1) + (-1)(x\^{}2) \\
-        ==> (1 + x)(x + (-1)1) + (-1)(x\^{}2) \\
-        ==> (-1)(1)1 + (-1)1x + 1x + xx + (-1)(x\^{}2) \\
-        Simplifying: (-1)(1)1 + (-1)1x + 1x + xx + (-1)(x\^{}2) \\
-        ==> (-1)(1)1 + (-1)1x + 1x + xx + (-1)(x\^{}2) \\
-        ==> -1 + (-1)1x + 1x + xx + (-1)(x\^{}2) \\
-        ==> -1 + (-1)x + 1x + xx + (-1)(x\^{}2) \\
-        ==> -1 + x + (-1)x + xx + (-1)(x\^{}2) \\
-        ==> -1 + x + (-1)x + (-1)(x\^{}2) + x\^{}2 \\
+    \bigskip
+    Program: \\
+    \texttt{((1 + 3\^{}2) / 2 - 1)\^{}(1/2) \\ (x+1)(x-1) - x\^{}2}
+
+    \bigskip
+    Textual Output: \\
+    \texttt{Expanding: ((1 + 3\^{}2)2\^{}(-1) + (-1)1)\^{}((1)2\^{}(-1)) \\
+        ==> ((-1)1 + (1 + 3\^{}2)2\^{}(-1))\^{}((1)2\^{}(-1)) \\
+        ==> ((-1)1 + (1 + (3)3)2\^{}(-1))\^{}((1)2\^{}(-1)) \\
+        ==> ((-1)1 + (1)2\^{}(-1) + 3(3)2\^{}(-1))\^{}((1)2\^{}(-1)) \\
+        Simplifying: ((-1)1 + (1)2\^{}(-1) + 3(3)2\^{}(-1))\^{}((1)2\^{}(-1)) \\
+        ==> ((-1)1 + (1)2\^{}(-1) + 3(3)2\^{}(-1))\^{}((1)2\^{}(-1)) \\
+        ==> (-1 + (1)2\^{}(-1) + 3(3)2\^{}(-1))\^{}((1)2\^{}(-1)) \\
+        ==> (-1 + 3(3)2\^{}(-1) + 2\^{}(-1))\^{}((1)2\^{}(-1)) \\
+        ==> (-1 + 0.5 + 3(3)2\^{}(-1))\^{}((1)2\^{}(-1)) \\
+        ==> (-1 + 0.5 + 0.5(3)3)\^{}((1)2\^{}(-1)) \\
+        ==> (-1 + 0.5 + 4.5)\^{}((1)2\^{}(-1)) \\
+        ==> 4\^{}((1)2\^{}(-1)) \\
+        ==> 4\^{}2\^{}(-1) \\
+        ==> 4\^{}0.5 \\
+        ==> 2
+    }
+
+    \bigskip
+    \texttt{Expanding: (x + 1)(x + (-1)1) + (-1)x\^{}2 \\
+        ==> (1 + x)(x + (-1)1) + (-1)x\^{}2 \\
+        ==> (-1)(1)1 + (-1)1x + 1x + xx + (-1)x\^{}2 \\
+        ==> (-1)(1)1 + (-1)1x + (-1)xx + 1x + xx \\
+        Simplifying: (-1)(1)1 + (-1)1x + (-1)xx + 1x + xx \\
+        ==> (-1)(1)1 + (-1)1x + (-1)xx + 1x + xx \\
+        ==> -1 + (-1)1x + (-1)xx + 1x + xx \\
+        ==> -1 + (-1)x + (-1)xx + 1x + xx \\
+        ==> -1 + (-1)x + 1x + xx + (-1)x\^{}2 \\
+        ==> -1 + x + (-1)x + xx + (-1)x\^{}2 \\
+        ==> -1 + x + (-1)x + (-1)x\^{}2 + x\^{}2 \\
         ==> -1 + 0 + 0 \\
         ==> -1 + 0 \\
         ==> -1
     } 
 
     \bigskip
-    \texttt{Differentiating with respect to x: x\^{}2 + y\^{}2 \\
-        ==> 0 + 2x \\
-        Expanding: 0 + 2x \\
-        ==> 0 + 2x \\
-        Simplifying: 0 + 2x \\
-        ==> 0 + 2x \\
-        ==> 2x
-    }
+    \LaTeX{} Output:
+    \subsection*{Expression: $((1 + 3^{2})2^{-1} + (-1)1)^{(1)2^{-1}}$}
+    Expanding: $((1 + 3^{2})2^{-1} + (-1)1)^{(1)2^{-1}}$
+    $$((-1)1 + (1 + 3^{2})2^{-1})^{(1)2^{-1}}$$
+    $$((-1)1 + (1 + (3)3)2^{-1})^{(1)2^{-1}}$$
+    $$((-1)1 + (1)2^{-1} + 3(3)2^{-1})^{(1)2^{-1}}$$
+    Simplifying: $((-1)1 + (1)2^{-1} + 3(3)2^{-1})^{(1)2^{-1}}$
+    $$((-1)1 + (1)2^{-1} + 3(3)2^{-1})^{(1)2^{-1}}$$
+    $$(-1 + (1)2^{-1} + 3(3)2^{-1})^{(1)2^{-1}}$$
+    $$(-1 + 3(3)2^{-1} + 2^{-1})^{(1)2^{-1}}$$
+    $$(-1 + 0.5 + 3(3)2^{-1})^{(1)2^{-1}}$$
+    $$(-1 + 0.5 + 0.5(3)3)^{(1)2^{-1}}$$
+    $$(-1 + 0.5 + 4.5)^{(1)2^{-1}}$$
+    $$4^{(1)2^{-1}}$$
+    $$4^{2^{-1}}$$
+    $$4^{0.5}$$
+    $$2$$
+    \subsection*{Expression: $(x + 1)(x + (-1)1) + (-1)x^{2}$}
+    Expanding: $(x + 1)(x + (-1)1) + (-1)x^{2}$
+    $$(1 + x)(x + (-1)1) + (-1)x^{2}$$
+    $$(-1)(1)1 + (-1)1x + 1x + xx + (-1)x^{2}$$
+    $$(-1)(1)1 + (-1)1x + (-1)xx + 1x + xx$$
+    Simplifying: $(-1)(1)1 + (-1)1x + (-1)xx + 1x + xx$
+    $$(-1)(1)1 + (-1)1x + (-1)xx + 1x + xx$$
+    $$-1 + (-1)1x + (-1)xx + 1x + xx$$
+    $$-1 + (-1)x + (-1)xx + 1x + xx$$
+    $$-1 + (-1)x + 1x + xx + (-1)x^{2}$$
+    $$-1 + x + (-1)x + xx + (-1)x^{2}$$
+    $$-1 + x + (-1)x + (-1)x^{2} + x^{2}$$
+    $$-1 + 0 + 0$$
+    $$-1 + 0$$
+    $$-1$$
 
-    \item The following example illustrates how CAT can recognize the same expression
-    in different forms and simplify them to a point where they can be combined. This
-    also demonstrates CAT's robustness to unusual styles regarding whitespace and use of 
-    various symbols.
-    This example should simplify to $0$. \\
-    \texttt{1+ (x+y) ( x - y )---(x) x + y\^{} ( 2 ) - z\^{}((x+1)(x-1) - x\^{}2 + y\^{}(9 - 3\^{}2))}  
-    
-    The above calculation is quite tedious when every single step is written out, 
-    but I include it here to demonstrate the flexiblity of CAT. The initial expression
-    (if you look past all the intentional garballing I introduced to challenge CAT) is:
-    $$1+(x+y)(x-y) - - - xx + y^{2} - z^{(x+1)(x-1) - x^2 + y^{9 - 3^2}}$$
+    \item This second example highlights CAT's ability to deal with simplifying deeply
+    nested expressions and ultimately undwinding all of the complexity to get a simple
+    answer. Here, we have an expression of the form $1-x^z$ where $z$ is a complicated
+    expression. But $z$ ultimately evaluates to 0, so the overall expression will 
+    evaluate to 0.
 
-    The \LaTeX{} output produced by running CAT on the above expression is included here verbatim:
-\end{enumerate}
+    \bigskip
+    Program: \\
+    \texttt{1 - x\^{}(1-x\^{}2/((x + 1)(x - 1) + 1))}
 
-Simplifying: $1 + (x + y)(x + (-1)y) + (-1)((-1)((-1)(xx))) + y^{2} + (-1)(z^{(x + 1)(x + (-1)1) + (-1)(x^{2}) + y^{9 + (-1)(3^{2})}})$
-$$1 + (-1)(-1)(-1)xx + (x + y)(x + (-1)y) + (-1)(z^{(1 + x)(x + (-1)1) + (-1)(x^{2}) + y^{9 + (-1)(3^{2})}}) + y^{2}$$
-$$1 + (-1)(-1)(-1)xx + xx + (-1)xy + (-1)yy + xy + (-1)(z^{(1 + x)(x + (-1)1) + (-1)(x^{2}) + y^{9 + (-1)(3^{2})}}) + y^{2}$$
-$$1 + (-1)(-1)(-1)xx + xx + (-1)xy + (-1)yy + xy + (-1)(z^{(-1)(1)1 + (-1)1x + 1x + xx + (-1)(x^{2}) + y^{9 + (-1)(3^{2})}}) + y^{2}$$
-$$1 + (-1)(-1)(-1)xx + xx + (-1)xy + (-1)yy + xy + (-1)(z^{(-1)(1)1 + (-1)1x + 1x + xx + (-1)(x^{2}) + (y^{9})(y^{(-1)(3^{2})})}) + y^{2}$$
-$$1 + (-1)(-1)(-1)xx + xx + (-1)xy + (-1)yy + xy + (-1)(z^{(-1)(1)1})(z^{(-1)1x})(z^{1x})(z^{xx})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)(3^{2})})}) + y^{2}$$
-$$1 + (-1)(-1)(-1)xx + xx + (-1)xy + (-1)yy + xy + (-1)(z^{(-1)(1)1})(z^{(-1)1x})(z^{1x})(z^{xx})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)(3^{2})})}) + y^{2}$$
-$$1 + xx + (-1)xy + (-1)yy + xy + (-1)(x^{2}) + (-1)(z^{(-1)(1)1})(z^{(-1)1x})(z^{1x})(z^{xx})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)(3^{2})})}) + y^{2}$$
-$$1 + (-1)xy + (-1)yy + xy + (-1)(x^{2}) + (-1)(z^{(-1)(1)1})(z^{(-1)1x})(z^{1x})(z^{xx})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)(3^{2})})}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{(-1)(1)1})(z^{(-1)1x})(z^{1x})(z^{xx})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)(3^{2})})}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1})(z^{(-1)1x})(z^{1x})(z^{xx})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)(3^{2})})}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1})(z^{(-1)x})(z^{1x})(z^{xx})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)(3^{2})})}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1})(z^{x})(z^{(-1)x})(z^{xx})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)(3^{2})})}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1})(z^{x})(z^{(-1)x})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)(3^{2})})})(z^{x^{2}}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1})(z^{x})(z^{(-1)x})(z^{(-1)(x^{2})})(z^{(y^{9})(y^{(-1)9})})(z^{x^{2}}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1})(z^{x})(z^{(-1)x})(z^{(-1)(x^{2})})(z^{(y^{-9})(y^{9})})(z^{x^{2}}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1})(z^{x})(z^{(-1)x})(z^{(-1)(x^{2})})(z^{x^{2}})(z^{y^{-9 + 9}}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1})(z^{x})(z^{(-1)x})(z^{(-1)(x^{2})})(z^{x^{2}})(z^{y^{0}}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1})(z^{1})(z^{x})(z^{(-1)x})(z^{(-1)(x^{2})})(z^{x^{2}}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1 + 1 + x + (-1)x + (-1)(x^{2}) + x^{2}}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1 + 0 + 0 + 1}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{-1 + 0 + 1}) + x^{2} + y^{2}$$
-$$1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + (-1)(z^{0}) + x^{2} + y^{2}$$
-$$1 + (-1)1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + x^{2} + y^{2}$$
-$$-1 + 1 + (-1)xy + xy + (-1)(x^{2}) + (-1)(y^{2}) + x^{2} + y^{2}$$
-$$-1 + 0 + 0 + 0 + 1$$
-$$-1 + 0 + 1$$
-$$0$$
+    \bigskip
+    Textual Output: \\
+    \texttt{Expanding: 1 + (-1)x\^{}(1 + (-1)((x\^{}2)((x + 1)(x + (-1)1) + 1)\^{}(-1))) \\
+    ==> 1 + (-1)x\^{}(1 + (-1)(x\^{}2)(1 + (1 + x)(x + (-1)1))\^{}(-1)) \\
+    ==> 1 + (-1)x\^{}(1 + (-1)xx(1 + (1 + x)(x + (-1)1))\^{}(-1)) \\
+    ==> 1 + (-1)x\^{}(1 + (-1)xx(1 + (-1)(1)1 + (-1)1x + 1x + xx)\^{}(-1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)xx(1 + (-1)(1)1 + (-1)1x + 1x + xx)\^{}(-1)) \\
+    Simplifying: 1 + (-1)(x\^{}1)x\^{}((-1)xx(1 + (-1)(1)1 + (-1)1x + 1x + xx)\^{}(-1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)xx(1 + (-1)(1)1 + (-1)1x + 1x + xx)\^{}(-1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)xx(-1 + 1 + (-1)1x + 1x + xx)\^{}(-1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)xx(-1 + 1 + (-1)x + 1x + xx)\^{}(-1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)xx(-1 + 1 + x + (-1)x + xx)\^{}(-1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)xx(-1 + 1 + x + (-1)x + x\^{}2)\^{}(-1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)xx(-1 + 0 + 1 + x\^{}2)\^{}(-1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)xxx\^{}2\^{}(-1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)x\^{}2\^{}(-1 + 1)) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)x\^{}2\^{}0) \\
+    ==> 1 + (-1)(x\^{}1)x\^{}((-1)1) \\
+    ==> 1 + (-1)(x\^{}(-1))x\^{}1 \\
+    ==> 1 + (-1)x\^{}(-1 + 1) \\
+    ==> 1 + (-1)x\^{}0 \\
+    ==> 1 + (-1)1 \\
+    ==> -1 + 1 \\
+    ==> 0}
 
-\begin{enumerate}
-    \setcounter{enumi}{2}
+    \bigskip
+    \LaTeX{} Output:
+    \subsection*{Expression: $1 + (-1)x^{1 + (-1)(x^{2}((x + 1)(x + (-1)1) + 1)^{-1})}$}
+    Expanding: $1 + (-1)x^{1 + (-1)(x^{2}((x + 1)(x + (-1)1) + 1)^{-1})}$
+    $$1 + (-1)x^{1 + (-1)x^{2}(1 + (1 + x)(x + (-1)1))^{-1}}$$
+    $$1 + (-1)x^{1 + (-1)xx(1 + (1 + x)(x + (-1)1))^{-1}}$$
+    $$1 + (-1)x^{1 + (-1)xx(1 + (-1)(1)1 + (-1)1x + 1x + xx)^{-1}}$$
+    $$1 + (-1)x^{1}x^{(-1)xx(1 + (-1)(1)1 + (-1)1x + 1x + xx)^{-1}}$$
+    Simplifying: $1 + (-1)x^{1}x^{(-1)xx(1 + (-1)(1)1 + (-1)1x + 1x + xx)^{-1}}$
+    $$1 + (-1)x^{1}x^{(-1)xx(1 + (-1)(1)1 + (-1)1x + 1x + xx)^{-1}}$$
+    $$1 + (-1)x^{1}x^{(-1)xx(-1 + 1 + (-1)1x + 1x + xx)^{-1}}$$
+    $$1 + (-1)x^{1}x^{(-1)xx(-1 + 1 + (-1)x + 1x + xx)^{-1}}$$
+    $$1 + (-1)x^{1}x^{(-1)xx(-1 + 1 + x + (-1)x + xx)^{-1}}$$
+    $$1 + (-1)x^{1}x^{(-1)xx(-1 + 1 + x + (-1)x + x^{2})^{-1}}$$
+    $$1 + (-1)x^{1}x^{(-1)xx(-1 + 0 + 1 + x^{2})^{-1}}$$
+    $$1 + (-1)x^{1}x^{(-1)xx(x^{2})^{-1}}$$
+    $$1 + (-1)x^{1}x^{(-1)(x^{2})^{-1 + 1}}$$
+    $$1 + (-1)x^{1}x^{(-1)(x^{2})^{0}}$$
+    $$1 + (-1)x^{1}x^{(-1)1}$$
+    $$1 + (-1)x^{-1}x^{1}$$
+    $$1 + (-1)x^{-1 + 1}$$
+    $$1 + (-1)x^{0}$$
+    $$1 + (-1)1$$
+    $$-1 + 1$$
+    $$0$$
+
     \item This last example highlights CAT's current ability to factor expressions.
     CAT automatically expands expressions before simplifying them, so this example
     demonstrates how sometimes CAT will not recover the original expression. In a
-    perfect world, this expression would simplify to \texttt{(x + y + z)\^{}2}. \\
-    \texttt{(x + y + z)(x + y + z)}
+    perfect world, this expression would simplify to \texttt{(x + y + z)\^{}2}. But
+    after first choosing to factor out the two, CAT gets stuck trying to simplify this
+    expression any further.
 
-    Sample output: \\
-    \texttt{Expanding: (x + y + z)(x + y + z) \\
-        ==> (x + y + z)(x + y + z) \\
+    \bigskip
+    Program: \\
+    \texttt{abcd + bdef \\ (x+y+z)\^{}2}
+
+    \bigskip
+    Textual Output: \\
+    \texttt{Expanding: abcd + bdef \\
+        ==> abcd + bdef \\
+        Simplifying: abcd + bdef \\
+        ==> abcd + bdef \\
+        ==> bd(ac + ef)
+    }
+
+    \bigskip
+    \texttt{
+        Expanding: (x + y + z)\^{}2 \\
+        ==> (x + y + z)\^{}2 \\
+        ==> (z + y + x)(z + y + x) \\
         ==> xx + xy + xy + yy + xz + xz + yz + yz + zz \\
         Simplifying: xx + xy + xy + yy + xz + xz + yz + yz + zz \\
         ==> xx + xy + xy + yy + xz + xz + yz + yz + zz \\
@@ -201,7 +281,29 @@ $$0$$
         ==> 2xy + 2xz + 2yz + x\^{}2 + y\^{}2 + z\^{}2 \\
         ==> 2(xy + xz + yz) + x\^{}2 + y\^{}2 + z\^{}2 \\
         ==> 2(yz + x(y + z)) + x\^{}2 + y\^{}2 + z\^{}2
-    } 
+    }
+
+    \bigskip
+    \LaTeX{} Output:
+    \subsection*{Expression: $abcd + bdef$}
+    Expanding: $abcd + bdef$
+    $$abcd + bdef$$
+    Simplifying: $abcd + bdef$
+    $$abcd + bdef$$
+    $$bd(ac + ef)$$
+    \subsection*{Expression: $(x + y + z)^{2}$}
+    Expanding: $(x + y + z)^{2}$
+    $$(x + y + z)^{2}$$
+    $$(z + y + x)(z + y + x)$$
+    $$xx + xy + xy + yy + xz + xz + yz + yz + zz$$
+    Simplifying: $xx + xy + xy + yy + xz + xz + yz + yz + zz$
+    $$xx + xy + xy + yy + xz + xz + yz + yz + zz$$
+    $$xy + xy + yy + xz + xz + yz + yz + zz + x^{2}$$
+    $$xy + xy + xz + xz + yz + yz + zz + x^{2} + y^{2}$$
+    $$xy + xy + xz + xz + yz + yz + x^{2} + y^{2} + z^{2}$$
+    $$2xy + 2xz + 2yz + x^{2} + y^{2} + z^{2}$$
+    $$2(xy + xz + yz) + x^{2} + y^{2} + z^{2}$$
+    $$2(yz + x(y + z)) + x^{2} + y^{2} + z^{2}$$
 \end{enumerate}
 
 \subsection*{Language Concepts}
@@ -211,7 +313,19 @@ Each line of a CAT program constitutes an expression that will be evaluated. Eva
 an expression involves reducing it to the simplist form possible by applying operators
 and performing algebraic manipulations. The primitives of CAT are variables (i.e. $x, y, z$) 
 and numbers (i.e. $1, -10, 3.141592$). These primitives can be combined with mathematical
-operations such as +, -, *, /, \^{}, (and maybe Differentiate) in order to form expressions. 
+operations such as +, -, *, /, and \^{} in order to form expressions. Each CAT program
+must end with a \texttt{.cat} extension, and there must not be any trailing newlines or
+the parser will be upset that you are asking it to simplify an empty expression.
+
+\bigskip
+When you run a program in the interpreter, the program will print out the series of
+simplifications that it performs on each expression you gave it. CAT begins simplifying
+an expression by first expanding it, so that terms are fully distributed. Then, CAT
+begins combining terms and will attempt to refactor the remaining expression into the
+simplist form it can. In addition to printing these steps out to \texttt{stdout}, the
+interpreter will also create a \LaTeX{} file with the same name as the input program
+containing another represenation of the calculation that is slightly easier to read.
+The \LaTeX{} file should be easily compiliable using your prefered \LaTeX{} compiler.
 
 \subsection*{Formal Syntax}
 
@@ -224,6 +338,7 @@ operations such as +, -, *, /, \^{}, (and maybe Differentiate) in order to form 
     &|& <expr><ws>\textsuperscript{+}<expr> \\
     &|& <expr><parens> \\
     &|& <parens><expr> \\
+    &|& -<expr> \\
     <op> &::=& + | - | * | / | \^{} \\
     <parens> &::=& (<expr>) \\
     <literal> &::=& <number> \\
@@ -245,7 +360,7 @@ operations such as +, -, *, /, \^{}, (and maybe Differentiate) in order to form 
 
 \subsection*{Semantics}
 
-\begin{tabular}{>{\centering}p{.27 \textwidth}|>{\centering}p{.1 \textwidth}|>{\centering}p{.1 \textwidth}|p{.4 \textwidth}}
+\begin{longtable}{>{\centering}p{.27 \textwidth}|>{\centering}p{.15 \textwidth}|>{\centering}p{.12 \textwidth}|p{.35 \textwidth}}
     \textbf{Syntax} & \textbf{Abstract Syntax} & \textbf{Prec/Assoc} & \centering \textbf{Meaning} \tabularnewline
     \hline
     \texttt{<number>} & Number of double & N/A & \texttt{number} is a primitive. 
@@ -258,61 +373,55 @@ operations such as +, -, *, /, \^{}, (and maybe Differentiate) in order to form 
     \texttt{<expr> (`\textbackslash{}n' <expr>)\textsuperscript{*}} & Sequence of Expression list & 0 / left &
     \texttt{Sequence} consists of a list of expressions to be simplified. Every CAT program has one \texttt{Sequence}
     which consists of each line of the program. After evaluating, each expression within a \texttt{Sequence} is converted
-    into a list of expressions that represent progressive simplifications of the original expression.
-\end{tabular}
+    into a list of expressions that represent progressive simplifications of the original expression. \\
+    \hline
+    \texttt{<expr> (+ <expr>)\textsuperscript{+}} & Addition of Expression list & 1 / left &
+    \texttt{Addition} consists of a list of expressions to be added. Because addition is 
+    associative, the addends are stored in a list since their particular order doesn't matter. \\
+    \hline
+    \texttt{<expr> (- <expr>)\textsuperscript{+}} & Addition of Expression list & 1 / left &
+    \texttt{Addition} also represents subtraction. Each term that is subtracted is represented
+    with the addition of the term multiplied by negative one. \\
+    \hline
+    \texttt{<expr> (* <expr>)\textsuperscript{+}} & Multiplication of Expression list & 2 / left &
+    \texttt{Multiplication} consists of a list of expressions to be added. Because multiplication is 
+    associative, the factors are stored in a list since their particular order doesn't matter. \\
+    \hline
+    \texttt{<expr>(<ws>\textsuperscript{+}<expr>)\textsuperscript{*}} & Multiplication of Expression list & 2 / left &
+    An alternative syntax for \texttt{Multiplication}. When two terms are next to each other they are implicitly multiplied. \\
+    \hline
+    \texttt{<expr><parens>} & Multiplication of Expression list & 2 / left &
+    An alternative syntax for \texttt{Multiplication}. When two terms are next to each other they are implicitly multiplied. \\
+    \hline
+    \texttt{<parens><expr>} & Multiplication of Expression list & 2 / left &
+    An alternative syntax for \texttt{Multiplication}. When two terms are next to each other they are implicitly multiplied. \\
+    \hline
+    \texttt{-<expr>} & Multiplication of Expression list & 2 / N/A &
+    An alternative syntax for \texttt{Multiplication}. In this case we have the implicit multiplication of the expression by
+    negative one. \\
+    \hline
+    \texttt{<expr> (/ <expr>)\textsuperscript{+}} & Multiplication of Expression list & 2 / left &
+    \texttt{Multiplication} also represents division. Each term that is divided is represented
+    with the multiplication of the term by the multiplicative inverse of the other term (The 
+    multiplicative inverse is the number raised to the negative 1 power). \\
+    \hline
+    \texttt{<expr>\^{}<expr>} & Exponentiation of Expression * Expression & 3 / right &
+    \texttt{Exponentiation} consists of two expressions. One represents the base, and the other represents
+    the exponent. Note that Exponentiation is not stored as a list because it is not associative.
+\end{longtable}
 
-% \begin{enumerate}[label= (\roman*)]
-%     \item The primitives in CAT are numbers and variables (i.e. $1.234$ or $x$)
-%     \item CAT supports many combining forms. These combining forms correspond with
-%     mathematical operations that take two or more operations. These include: +, -, 
-%     *, /, \^{}, Differentiate, and Integrate. Additionally, each line of a CAT program
-%     corresponds to a separate expression that will be evaluated in sequence. Thus,
-%     a newline can be understood as a sequence operator. Assignments are also combining
-%     forms that bind a variable to some other expression. These are the only kinds of
-%     statements that interact with future lines (i.e. the line $z = x + y$ would affect
-%     all future uses of the variable $z$ in subsequent lines).
-%     \item 
-%         \begin{enumerate}[label= (\Alph*)]
-%             \item CAT programs are executed by passing them to the interpreter within
-%             a text file. For example, if I wanted to run the program \texttt{math.cat},
-%             I would run \texttt{dotnet run math.cat}.
-%             \item Evaluating a CAT program will result in two outputs representing the
-%             same calculation. For each line in a CAT program, the language will attempt
-%             to simplify the mathematical expression as much as it can. This simplification
-%             occurs in a sequence of steps. Each step will be printed as a textual output.
-%             Additionally, a \LaTeX{} file will be produced (and hopefully automatically
-%             compiled into a pdf) representing the same calculation but in an easier to
-%             read form.
-
-%             For example, the program: 
-%             \texttt{(x+1)(x-1) - x\^{}2 \\ Differentiate x\^{}2 + y\^{}2 wrt x} \\
-%             would produce the output: \\
-%             \texttt{Expanding: (x + 1)(x + (-1)1) + (-1)(x\^{}2) \\
-%             ==> (1 + x)(x + (-1)1) + (-1)(x\^{}2) \\
-%             ==> (-1)(1)1 + (-1)1x + 1x + xx + (-1)(x\^{}2) \\
-%             Simplifying: (-1)(1)1 + (-1)1x + 1x + xx + (-1)(x\^{}2) \\
-%             ==> (-1)(1)1 + (-1)1x + 1x + xx + (-1)(x\^{}2) \\
-%             ==> -1 + (-1)1x + 1x + xx + (-1)(x\^{}2) \\
-%             ==> -1 + (-1)x + 1x + xx + (-1)(x\^{}2) \\
-%             ==> -1 + x + (-1)x + xx + (-1)(x\^{}2) \\
-%             ==> -1 + x + (-1)x + (-1)(x\^{}2) + x\^{}2 \\
-%             ==> -1 + 0 \\
-%             ==> -1
-%             }
-
-%             Note: the above output is what the language currently produces. One of my goals
-%             over the next week is to get the language to have slightly prettier formatting
-%             and what I subjectively consider a more human-like arrangement of terms.
-
-%             \bigskip
-%             The below represents hypothetical output assuming I get to implementing differentiation.
-            
-%             \texttt{Simplifying: Differentiate x\^{}2 + y\^{}2 wrt x \\
-%                 ==> 2x + 0 \\
-%                 ==> 2x
-%             }
-%         \end{enumerate}
-% \end{enumerate}
+\subsection*{Remaining Work}
+Symbolic math systems can have nearly infinite scope. CAT has traded off a focus on computational
+power for its clarity in communicating its simplification steps. While there are essentially 
+limitless additions that can be made to a computer math system, factoring expressions is clearly
+a current weakpoint of CAT. General purpose factoring of expressions is a very hard problem to
+solve given all the possible edge cases. Another goal that I had for CAT was to implement Calculus
+operations; however, one barrier I hit with trying to implement derivatives is that taking the 
+derivative of arbitrary exponential functions requires being able to express logarithms, which
+brings us to the last notable area that CAT could be improved. CAT does not support special 
+functions such as $\log$, $\sin$, $\sinh$, $\tan^{-1}$, $\exp$, etc. These functions are highly
+useful (especially in the context of calculus), so they logically be some of the next things
+that should be added to the language as well.
 
 % DO NOT DELETE ANYTHING BELOW THIS LINE
 \end{document}

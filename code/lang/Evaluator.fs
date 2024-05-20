@@ -211,6 +211,19 @@ and expand_exponentiation exponent_base exponent =
 
     let combined_expr =
         match final_base_version, final_exponent_version with
+        | b, Number n when n > 1.0 ->
+            let rec convert_to_list e n =
+                if n >= 1.0 then e::(convert_to_list e (n-1.0)) else []
+            let list_terms = convert_to_list b n
+            let leftover_exponent = double(list_terms.Length) - n
+            if leftover_exponent <> 0 then 
+                let product = 
+                    flatten_ast (reorder_terms 
+                        (Multiplication ((Exponentiation (b, Number leftover_exponent))::list_terms))) 
+                product::(expand product)
+            else 
+                let product = flatten_ast (Multiplication list_terms)
+                product::(expand product)
         | b, Addition es ->
             let split_version = Multiplication (List.map (fun e -> Exponentiation (b, e)) es)
             split_version::(expand split_version)
@@ -413,7 +426,7 @@ and simplify_addition terms =
 
     // Try to cancel any terms we can (we do this seperately from combining like terms
     // in order to avoid missing the opportunity to do so
-    let cancelled_expr =reorder_terms (flatten_ast (Addition (cancel_terms terms)))
+    let cancelled_expr = reorder_terms (flatten_ast (Addition (cancel_terms terms)))
     if cancelled_expr <> Addition terms then
         cancelled_expr::(simplify cancelled_expr)
     else
@@ -433,15 +446,25 @@ and simplify_addition terms =
     []
 
 and simplify_multiplication terms =
-    // Try to simplify each term individually
-    let simplifications: Expression list = simplify_list_of_terms terms Multiplication []
-    if simplifications.Length <> 0 then
-        simplifications @ (simplify (List.last simplifications))
-    else
+    // Remove any redundant multiplications by 1
+    let non_one_terms = List.filter (fun e -> e <> Number 1) terms
+    let filtered_product =
+        if non_one_terms.Length > 1 then Multiplication non_one_terms else
+            if non_one_terms.Length = 1 then List.head non_one_terms else
+                Number 1
+    if filtered_product <> Multiplication terms then
+        filtered_product::(simplify filtered_product)
+    else 
 
     // Check if we multiply by 0
     if List.exists (fun e -> e = Number 0) terms then
         [Number 0]
+    else
+
+    // Try to simplify each term individually
+    let simplifications: Expression list = simplify_list_of_terms terms Multiplication []
+    if simplifications.Length <> 0 then
+        simplifications @ (simplify (List.last simplifications))
     else
 
     let combined_terms = combine_like_terms terms multiplication_term_combiner
@@ -453,16 +476,6 @@ and simplify_multiplication terms =
             let expr = reorder_terms (Multiplication exprs)
             expr::(simplify expr)
     else
-
-    // Remove any redundant multiplications by 1
-    let non_one_terms = List.filter (fun e -> e <> Number 1) terms
-    let filtered_product =
-        if non_one_terms.Length > 1 then Multiplication non_one_terms else
-            if non_one_terms.Length = 1 then List.head non_one_terms else
-                Number 1
-    if filtered_product <> Multiplication terms then
-        filtered_product::(simplify filtered_product)
-    else 
 
     // No other simplifications to try
     []
@@ -597,12 +610,19 @@ let rec to_latex expression =
                 s + to_latex (Multiplication es)
         | [] -> ""
     | Exponentiation(e1, e2) -> 
-        // Check if we need to wrap either part in parentheses
-        match needs_parens e1 with
-        | true ->
+        // Check if we need to wrap the base in parentheses
+
+        // Note these parens are because exponentiation is right associative
+        match e1 with 
+        | Exponentiation _ ->
             "(" + (to_latex e1) + ")^{" + (to_latex e2) + "}"
-        | false ->
-            (to_latex e1) + "^{" + (to_latex e2) + "}"
+        | _ ->
+            // Otherwise just generically check if e1 needs parens
+            match needs_parens e1 with
+            | true ->
+                "(" + (to_latex e1) + ")^{" + (to_latex e2) + "}"
+            | false ->
+                (to_latex e1) + "^{" + (to_latex e2) + "}"
             
     | Sequence(es) -> // Unused
         "\\begin{document}\n" +
